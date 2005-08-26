@@ -1,16 +1,19 @@
 package Catalyst::Plugin::Authentication::Basic::Remote;
 
 use strict;
+use base qw/Class::Accessor::Fast/;
 use NEXT;
 
 use LWP::UserAgent;
 use MIME::Base64;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
+
+__PACKAGE__->mk_accessors(qw/_login/);
 
 =head1 NAME
 
-Catalyst::Plugin::Authentication::Basic::Remote - Authentication at Remote host's Basic one.
+Catalyst::Plugin::Authentication::Basic::Remote - Basic authentication via remote host.
 
 =head1 SYNOPSIS
 
@@ -21,9 +24,12 @@ Catalyst::Plugin::Authentication::Basic::Remote - Authentication at Remote host'
       authentication => {
           auth_url => 'http://example.com/',
 	  
-	  # option
+	  # Use Template when unauthorized. (option)
 	  view_tt  => 'MyApp::V::TT',
 	  template => '401.tt',
+
+          # text in Authentication dialog (default="Require Authorization")
+          auth_name => 'Require Authorization',
       },
   );
 
@@ -47,15 +53,23 @@ sub prepare {
 
     $c = $c->NEXT::prepare(@_);
 
-    if ( $c->session->{user} and $c->session->{pass} ) {
+    if ( $c->session->{user} and $c->session->{password} ) {
+        $c->log->debug("Auth info found in Session:");
+        $c->log->debug("user: ".$c->session->{user});
+        $c->log->debug("pass: ".$c->session->{password});
+
         $c->req->{user}     = $c->session->{user};
         $c->req->{password} = $c->session->{password};
         return $c;
     }
 
     if ( $c->config->{authentication}->{auth_url} ) {
-        if ( my ($tokens) = ( $c->req->header('Authorization') =~ /^Basic (.+)$/ ) ) {
+        if ( $c->req->header('Authorization') and  my ($tokens) = ( $c->req->header('Authorization') =~ /^Basic (.+)$/) ) {
             my ( $username, $password ) = split /:/, decode_base64($tokens);
+
+            $c->log->debug("Authentication via ". $c->config->{authentication}->{auth_url} );
+            $c->log->debug("user: $username");
+            $c->log->debug("pass: $password");
 
             my $ua = LWP::UserAgent->new;
             my $req = HTTP::Request->new( HEAD => $c->config->{authentication}->{auth_url} );
@@ -64,14 +78,20 @@ sub prepare {
             my $res = $ua->request($req);
 
             if ( $res->code ne '401' ) {
+                $c->log->debug("Authorization successful.");
                 $c->req->{user}         = $username;
                 $c->session->{user}     = $username;
                 $c->req->{password}     = $password;
                 $c->session->{password} = $password;
+                $c->_login(1);
+            } else {
+                $c->log->debug("Authorization failed.");
+                $c->log->debug("Remote status line: " . $res->status_line);
             }
         }
 
         unless ( $c->req->{user} ) {
+            $c->log->debug("return 401 Unauthorized.");
             $c->res->status(401);
             $c->res->header( 'WWW-Authenticate' =>
                   qq!Basic realm="@{[ $c->config->{authentication}->{auth_name} || 'Require Authorization' ]}"!
@@ -92,7 +112,7 @@ sub dispatch {
     if ( $c->config->{authentication}->{template} ) {
         my $view = $c->config->{authentication}->{view_tt} || $c->config->{name};
 
-        if ($view) {
+        if ($view and $c->res->status eq '401') {
             $c->stash->{template} = $c->config->{authentication}->{template};
             $c->forward($view);
             return;
@@ -102,12 +122,39 @@ sub dispatch {
     return $c->NEXT::dispatch(@_);
 }
 
+=item login
+
+=cut
+
+sub login {
+    my $c = shift;
+
+    return unless $c->session->{user};
+    return if ($c->_login);
+
+    if ($c->config->{authentication}->{auth_url}) {
+        $c->log->debug("Login method called");
+
+        delete $c->session->{user} if $c->session->{user};
+        delete $c->session->{password} if $c->session->{password};
+
+        $c->res->status(401);
+        $c->res->header( 'WWW-Authenticate' =>
+              qq!Basic realm="@{[ $c->config->{authentication}->{auth_name} || 'Require Authorization' ]}"!
+        );
+
+        return 1;
+    }
+
+    return;
+}
+
 =item logout
 
 =cut
 
 sub logout {
-    my ( $c, $username, $password ) = @_;
+    my $c = shift;
 
     return unless $c->config->{authentication}->{auth_url};
 
