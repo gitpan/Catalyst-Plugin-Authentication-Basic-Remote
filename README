@@ -1,0 +1,42 @@
+NAME
+    Catalyst::Plugin::Authentication::Basic::Remote - Authentication at
+    Remote host's Basic one.
+
+SYNOPSIS
+      use Catalyst;
+      MyApp->setup(qw/Authentication::Basic::Remote Session::FastMmap/);
+
+      MyApp->config(
+          authentication => {
+              auth_host => 'http://example.com/',
+          
+              # option
+              view_tt  => 'MyApp::V::TT',
+              template => '401.tt',
+          },
+      );
+
+DESCRIPTION
+    Catalyst authentication plugin that use remote host's Basic
+    authentication.
+
+    It is only first time that plugin request to remote host for
+    authentication. After that, user infomation keeps in sessions.
+
+METHODS
+    prepare
+    dispatch
+    logout
+
+SEE ALSO
+    Catalyst
+
+AUTHOR
+    Daisuke Murase, <typester@cpan.org>
+
+COPYRIGHT AND LICENSE
+    Copyright (C) 2005 by Daisuke Murase
+
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
