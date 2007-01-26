@@ -1,13 +1,13 @@
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
+name 'Catalyst-Plugin-Authentication-Basic-Remote';
+all_from 'lib/Catalyst/Plugin/Authentication/Basic/Remote.pm';
 
-WriteMakefile(
-    NAME              => 'Catalyst::Plugin::Authentication::Basic::Remote',
-    VERSION_FROM      => 'lib/Catalyst/Plugin/Authentication/Basic/Remote.pm',
-    ABSTRACT_FROM  => 'lib/Catalyst/Plugin/Authentication/Basic/Remote.pm',
-    PREREQ_PM         => {
-        Catalyst => '5.30',
-	'LWP::UserAgent' => 0,
-	'MIME::Base64' => 0,
-    },
-    AUTHOR         => 'Daisuke Murase <typester@cpan.org>',
-);
+build_requires 'Test::More';
+
+requires 'Catalyst' => '5.30';
+requires 'LWP::UserAgent';
+requires 'MIME::Base64';
+
+use_test_base;
+auto_include;
+WriteAll;

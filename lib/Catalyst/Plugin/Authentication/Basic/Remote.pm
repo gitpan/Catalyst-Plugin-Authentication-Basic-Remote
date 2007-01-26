@@ -7,13 +7,13 @@ use NEXT;
 use LWP::UserAgent;
 use MIME::Base64;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 __PACKAGE__->mk_accessors(qw/_login/);
 
 =head1 NAME
 
-Catalyst::Plugin::Authentication::Basic::Remote - Basic authentication via remote host.
+Catalyst::Plugin::Authentication::Basic::Remote - (DEPRECATED) Basic authentication via remote host.
 
 =head1 SYNOPSIS
 
@@ -32,6 +32,12 @@ Catalyst::Plugin::Authentication::Basic::Remote - Basic authentication via remot
           auth_name => 'Require Authorization',
       },
   );
+
+=head1 DEPRECATION NOTICE
+
+This module has been deprecated. The use of a new Authentication style is recommended.
+
+See L<Catalyst::Plugin::Authetnication> for detail.
 
 =head1 DESCRIPTION
 

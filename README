@@ -1,6 +1,6 @@
 NAME
-    Catalyst::Plugin::Authentication::Basic::Remote - Authentication at
-    Remote host's Basic one.
+    Catalyst::Plugin::Authentication::Basic::Remote - (DEPRECATED) Basic
+    authentication via remote host.
 
 SYNOPSIS
       use Catalyst;
@@ -8,13 +8,22 @@ SYNOPSIS
 
       MyApp->config(
           authentication => {
-              auth_host => 'http://example.com/',
+              auth_url => 'http://example.com/',
           
-              # option
+              # Use Template when unauthorized. (option)
               view_tt  => 'MyApp::V::TT',
               template => '401.tt',
+
+              # text in Authentication dialog (default="Require Authorization")
+              auth_name => 'Require Authorization',
           },
       );
+
+DEPRECATION NOTICE
+    This module has been deprecated. The use of a new Authentication style
+    is recommended.
+
+    See Catalyst::Plugin::Authetnication for detail.
 
 DESCRIPTION
     Catalyst authentication plugin that use remote host's Basic
@@ -26,6 +35,7 @@ DESCRIPTION
 METHODS
     prepare
     dispatch
+    login
     logout
 
 SEE ALSO
